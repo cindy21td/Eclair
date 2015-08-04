@@ -3,8 +3,10 @@ package com.hackjak.eclair.eclair;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
@@ -49,6 +51,13 @@ public class MapsActivity extends FragmentActivity {
             // Check if we were successful in obtaining the map.
             if (mMap != null) {
                 setUpMap();
+
+                CameraPosition cameraPosition = new CameraPosition.Builder()
+                        .target(new LatLng(-6.175387, 106.827153))      // Sets the center of the map to Mountain View
+                        .zoom(17)                   // Sets the zoom
+                        .tilt(75)                   // Sets the tilt of the camera to 30 degrees
+                        .build();                   // Creates a CameraPosition from the builder
+                mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
             }
         }
     }
@@ -60,6 +69,6 @@ public class MapsActivity extends FragmentActivity {
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
     private void setUpMap() {
-        mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
+        mMap.addMarker(new MarkerOptions().position(new LatLng(-6.175387, 106.827153)).title("Marker"));
     }
 }

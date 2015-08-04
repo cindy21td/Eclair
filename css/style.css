@@ -1,0 +1,94 @@
+/* ============================================
+					index.html
+=============================================== */
+
+h1 {
+	float: right;
+	font-size: 2em;
+	margin: 0;
+	margin-top: 0.5em;
+}
+
+#main {
+	margin-top: 6em;
+	text-align: center;
+	margin-bottom: 10em;
+}
+
+#main #tour a {
+	display: block;
+	width: 7em;
+	margin-right: auto;
+	margin-left: auto;
+	margin-bottom: 2em;
+}
+
+#main #tour span {
+	opacity: 0;
+}
+
+#main #tour a:hover + span {
+	opacity: 1;
+}
+
+#main #tour img {
+	width: 100%;
+}
+
+#main #tour {
+	margin-bottom: 3em;
+}
+
+#main #search {
+	width: 60%;
+	margin-right: auto;
+	margin-left: auto;
+}
+
+#main #search .input-group {
+	width: 50%;
+}
+
+#main #search a {
+	display: inline-block;
+	float: right;
+	width: 50%;
+	text-align: center;
+}
+
+#main #search img {
+	width: 3em;
+}
+
+#top-entries {
+	width: 80%;
+	margin-right: auto;
+	margin-left: auto;
+}
+
+#top-entries ul {
+	list-style-type: none;
+}
+
+#top-entries li {
+	width: 33%;
+	display: inline-block;
+}
+
+#top-entries img {
+	width: 50%;
+}
+
+#top-entries p {
+	display: inline-block;
+}
+
+/* ============================================
+					tour.html
+=============================================== */
+
+
+
+/* ============================================
+					directory.html
+=============================================== */

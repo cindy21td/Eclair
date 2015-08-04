@@ -87,7 +87,13 @@ h1 {
 					tour.html
 =============================================== */
 
-
+#map-canvas {
+	margin-top: 4em;
+	width: 100%;
+	height: 100vh;
+	margin: 0;
+	padding: 0;
+}
 
 /* ============================================
 					directory.html

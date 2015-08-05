@@ -1,0 +1,23 @@
+TODOs
+
+DUE Tuesday (US) / Wednesday (Jakarta)
+    (done): Find out how to continuously get the user's location.
+    TODO: Connect API + Database to the App. (Handle the connection needed to get the data)
+    (done): Create an event listener for changes in the user location.
+    TODO: Query data for location near the user's location. (If user location changes, then fetch attractions near user).
+    
+DUE Wednesday (US) / Thursday (Jakarta)
+    TODO: Display attractions data as markers.
+    TODO: Create info window layout for every marker (attractions).
+    TODO: Integrate speech/voice storytelling.
+    
+DUE Thursday (US) / Friday (Jakarta)
+    TODO: Add search feature.
+    TODO: Add feature where user can contribute in storytelling.
+    
+DUE Friday (US) / Saturday (Jakarta)
+    TODO: Fix UI + debugging
+    TODO: Run test cases.
+    TODO: Start compiling presentation materials.
+    
+Extra day: Saturday (US) / Sunday (Jakarta)

@@ -1,37 +1,55 @@
 package com.hackjak.eclair.eclair;
 
 import android.location.Location;
+import android.os.Handler;
+import android.os.SystemClock;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.view.animation.Interpolator;
+import android.view.animation.LinearInterpolator;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-public class MapsActivity extends FragmentActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
+import java.text.DateFormat;
+import java.util.Date;
+
+public class MapsActivity extends FragmentActivity implements GoogleApiClient.ConnectionCallbacks,
+                                                            GoogleApiClient.OnConnectionFailedListener,
+                                                            LocationListener {
 
     protected static final String TAG = "location-updates";
     public static final long UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
     public static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS =
             UPDATE_INTERVAL_IN_MILLISECONDS / 2;
 
-    private GoogleMap mMap; // Might be null if Google Play services APK is not available.
+    // Location of Monas
+    private LatLng MONAS = new LatLng(-6.175387, 106.827153);
+
+    // Google map object from API
+    private GoogleMap mMap;
 
     private GoogleApiClient mGoogleApiClient;
     protected LocationRequest mLocationRequest;
 
+    // Current location from Location API
     private Location mCurrentLocation;
-
+    private Marker currentMarker;
 
     protected Boolean mRequestingLocationUpdates;
     protected String mLastUpdateTime;
@@ -44,6 +62,9 @@ public class MapsActivity extends FragmentActivity implements GoogleApiClient.Co
         setContentView(R.layout.activity_maps);
         setUpMapIfNeeded();
 
+        mRequestingLocationUpdates = false;
+        mLastUpdateTime = "";
+
         buildGoogleApiClient();
     }
 
@@ -51,23 +72,34 @@ public class MapsActivity extends FragmentActivity implements GoogleApiClient.Co
     protected void onResume() {
         super.onResume();
         setUpMapIfNeeded();
+        if (mGoogleApiClient.isConnected() && mRequestingLocationUpdates) {
+            startLocationUpdates();
+        }
     }
 
-    /**
-     * Sets up the map if it is possible to do so (i.e., the Google Play services APK is correctly
-     * installed) and the map has not already been instantiated.. This will ensure that we only ever
-     * call {@link #setUpMap()} once when {@link #mMap} is not null.
-     * <p/>
-     * If it isn't installed {@link SupportMapFragment} (and
-     * {@link com.google.android.gms.maps.MapView MapView}) will show a prompt for the user to
-     * install/update the Google Play services APK on their device.
-     * <p/>
-     * A user can return to this FragmentActivity after following the prompt and correctly
-     * installing/updating/enabling the Google Play services. Since the FragmentActivity may not
-     * have been completely destroyed during this process (it is likely that it would only be
-     * stopped or paused), {@link #onCreate(Bundle)} may not be called again so we should call this
-     * method in {@link #onResume()} to guarantee that it will be called.
-     */
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mGoogleApiClient.connect();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Stop location updates to save battery, but don't disconnect the GoogleApiClient object.
+        if (mGoogleApiClient.isConnected()) {
+            stopLocationUpdates();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        mGoogleApiClient.disconnect();
+        super.onStop();
+
+    }
+
+    // Sets up the Google map display
     private void setUpMapIfNeeded() {
         // Do a null check to confirm that we have not already instantiated the map.
         if (mMap == null) {
@@ -80,72 +112,30 @@ public class MapsActivity extends FragmentActivity implements GoogleApiClient.Co
 
                 // Set Camera
                 CameraPosition cameraPosition = new CameraPosition.Builder()
-                        .target(new LatLng(-6.175387, 106.827153))      // Sets the center of the map to Mountain View
+                        .target(MONAS)      // Sets the center of the map to Monas
                         .zoom(17)                   // Sets the zoom
                         .tilt(75)                   // Sets the tilt of the camera to 30 degrees
                         .build();                   // Creates a CameraPosition from the builder
-                mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 
+                // Enable to mark my location (indicated by a blue dot)
                 mMap.setMyLocationEnabled(true);
 
-                mMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
-                    @Override
-                    public boolean onMyLocationButtonClick() {
-                        //Toast.makeText(
-                        //        getApplicationContext(),
-                        //        "Example de Message for Android",
-                        //        Toast.LENGTH_SHORT).show();
-
-                        if (!mRequestingLocationUpdates) {
-                            mRequestingLocationUpdates = true;
-                            startLocationUpdates();
-                        }
-                        return true;
-                    }
-                });
-
+                mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 
             }
         }
     }
 
-    protected void startLocationUpdates() {
-        // The final argument to {@code requestLocationUpdates()} is a LocationListener
-        // (http://developer.android.com/reference/com/google/android/gms/location/LocationListener.html).
-        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
-    }
-
     /**
-     * This is where we can add markers or lines, add listeners or move the camera. In this case, we
-     * just add a marker near Africa.
-     * <p/>
-     * This should only be called once and when we are sure that {@link #mMap} is not null.
+     * This is where we can add markers or lines, add listeners or move the camera.
+     * This should only be called once and when we are sure that {#mMap} is not null.
      */
     private void setUpMap() {
-        mMap.addMarker(new MarkerOptions().position(new LatLng(-6.175387, 106.827153)).title("Marker"));
+        // Add marker to Monas
+        mMap.addMarker(new MarkerOptions().position(MONAS).title("Marker"));
     }
 
-    @Override
-    public void onConnected(Bundle connectionHint) {
-        mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(
-                mGoogleApiClient);
-        if (mCurrentLocation != null) {
-            CameraUpdate center=
-                    CameraUpdateFactory.newLatLng(new LatLng(mCurrentLocation.getLatitude(),
-                           mCurrentLocation.getLongitude()));
-            mMap.moveCamera(center);
-            Toast.makeText(this, "Dice", Toast.LENGTH_LONG).show();
-        } else {
-            Toast.makeText(this, "No Dice", Toast.LENGTH_LONG).show();
-        }
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-        Log.i("Google API Location", "Connection suspended");
-        mGoogleApiClient.connect();
-    }
-
+    // Build the Google API responsible for fetching current location data
     protected synchronized void buildGoogleApiClient() {
         Log.i(TAG, "Building GoogleApiClient");
         mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -172,23 +162,136 @@ public class MapsActivity extends FragmentActivity implements GoogleApiClient.Co
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
     }
 
+    // 'Start' Button click handler
+    public void startUpdate(View v) {
+        if (!mRequestingLocationUpdates) {
+            mRequestingLocationUpdates = true;
+            startLocationUpdates();
+        }
+    }
+
+    protected void startLocationUpdates() {
+        // The final argument to {@code requestLocationUpdates()} is a LocationListener
+        // (http://developer.android.com/reference/com/google/android/gms/location/LocationListener.html).
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+        updateUI();
+    }
+
+    // 'Stop' Button click handler
+    public void stopUpdate(View v) {
+        if (mRequestingLocationUpdates) {
+            mRequestingLocationUpdates = false;
+            stopLocationUpdates();
+        }
+    }
+
+    protected void stopLocationUpdates() {
+        // It is a good practice to remove location requests when the activity is in a paused or
+        // stopped state. Doing so helps battery performance and is especially
+        // recommended in applications that request frequent location updates.
+
+        // The final argument to {@code requestLocationUpdates()} is a LocationListener
+        // (http://developer.android.com/reference/com/google/android/gms/location/LocationListener.html).
+        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+    }
+
+
+
+    @Override
+    public void onConnected(Bundle connectionHint) {
+        mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(
+                mGoogleApiClient);
+
+        if (mCurrentLocation == null) {
+            mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+            mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
+            updateUI();
+        }
+
+        // If the user presses the Start Updates button before GoogleApiClient connects, we set
+        // mRequestingLocationUpdates to true (see startUpdatesButtonHandler()). Here, we check
+        // the value of mRequestingLocationUpdates and if it is true, we start location updates.
+        if (mRequestingLocationUpdates) {
+            startLocationUpdates();
+        }
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+        Log.i("Google API Location", "Connection suspended");
+        mGoogleApiClient.connect();
+    }
+
+
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
         Log.i("Google API Location", "Connection failed: ConnectionResult.getErrorCode() = " + connectionResult.getErrorCode());
 
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        mGoogleApiClient.connect();
-    }
 
     @Override
-    protected void onStop() {
-        super.onStop();
-        if (mGoogleApiClient.isConnected()) {
-            mGoogleApiClient.disconnect();
+    public void onLocationChanged(Location location) {
+        mCurrentLocation = location;
+        mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
+        updateUI();
+        Toast.makeText(this, "Location updated", Toast.LENGTH_SHORT).show();
+    }
+
+    // Update camera center and the customized marker
+    private void updateUI() {
+        if (mCurrentLocation != null) {
+            //mMap.moveCamera( CameraUpdateFactory.newLatLngZoom(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()) , 14.0f) );
+            LatLng position = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
+            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(position, 30);
+
+            if(currentMarker == null) {
+                currentMarker = mMap.addMarker(new MarkerOptions()
+                        .position(position).flat(true)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+            }
+
+            animateMarker(currentMarker, mCurrentLocation);
+
+            mMap.animateCamera(cameraUpdate);
+
         }
+    }
+
+    // Animate the custom marker movement
+    // TODO: NOT WORKING CORRECTLY, NEED TO BE FIXED.
+    public void animateMarker(final Marker marker, final Location location) {
+        final Handler handler = new Handler();
+        final long start = SystemClock.uptimeMillis();
+        final LatLng startLatLng = marker.getPosition();
+        final double startRotation = marker.getRotation();
+        final long duration = 500;
+
+        final Interpolator interpolator = new LinearInterpolator();
+
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                long elapsed = SystemClock.uptimeMillis() - start;
+                float t = interpolator.getInterpolation((float) elapsed
+                        / duration);
+
+                double lng = t * location.getLongitude() + (1 - t)
+                        * startLatLng.longitude;
+                double lat = t * location.getLatitude() + (1 - t)
+                        * startLatLng.latitude;
+
+                float rotation = (float) (t * location.getBearing() + (1 - t)
+                        * startRotation);
+
+                marker.setPosition(new LatLng(lat, lng));
+                marker.setRotation(rotation);
+
+                if (t < 1.0) {
+                    // Post again 16ms later.
+                    handler.postDelayed(this, 16);
+                }
+            }
+        });
     }
 }

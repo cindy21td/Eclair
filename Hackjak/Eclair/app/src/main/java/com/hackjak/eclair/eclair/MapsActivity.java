@@ -51,10 +51,12 @@ import java.util.Date;
     (done): Display attractions data as markers.
     (done): Create info window layout for every marker (attractions).
     (done): Add an event listener for each marker (Geofence)
+    TODO: Add some sample voice file for storytelling.
     TODO: Integrate speech/voice storytelling.
     DUE Thursday (US) / Friday (Jakarta)
-    TODO: Add search feature.
-    TODO: Add feature where user can contribute in storytelling.
+    TODO: Add separate window for each attractions' information.
+    TODO: Add search feature. (Including input box and appropriate query)
+    TODO: Add feature where user can contribute to storytelling. (UI + query)
     DUE Friday (US) / Saturday (Jakarta)
     TODO: Fix UI + debugging
     TODO: Run test cases.
